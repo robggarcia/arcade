@@ -1,16 +1,60 @@
+// begin by creating an object to represent the Arcade
+const arcade = {
+  player1: {
+    name: "Computer",
+    color: "red",
+    score: 0,
+  },
+  player2: {
+    name: "Computer",
+    color: "yellow",
+    score: 0,
+  },
+  board: [],
+  message: "",
+};
+
 const body = document.querySelector("body");
 
 // after submitting names, the computer will display welcomes and give the user options for games to play
-let player1 = "Computer";
-let player2 = "Computer";
+const scoreDiv = document.createElement("div");
+scoreDiv.setAttribute("id", "scores");
+const p1StatsDiv = document.createElement("div");
+p1StatsDiv.classList.add("stats");
+const p2StatsDiv = document.createElement("div");
+p2StatsDiv.classList.add("stats");
+scoreDiv.appendChild(p1StatsDiv);
+scoreDiv.appendChild(p2StatsDiv);
+
+let p1Score = document.createElement("p");
+p1Score.textContent = `Score = ${arcade.player1.score}`;
+
+let p2Score = document.createElement("p");
+p2Score.textContent = `Score = ${arcade.player2.score}`;
 
 const input1 = document.querySelector("#p1-name");
 const p1Button = document.querySelector("#p1-submit");
+const player1field = document.querySelector("#input-name1");
+const player2field = document.querySelector("#input-name2");
+
+const showGames = document.querySelector(".select-game");
+
 p1Button.addEventListener("click", () => {
   if (input1.value) {
-    player1 = input1.value;
-    input1.replaceWith(player1);
+    arcade.player1 = input1.value;
+    const player1Welcome = document.createElement("h3");
+    player1Welcome.textContent = `${arcade.player1}`;
+    input1.classList.add("hide");
+    // input1.replaceWith(arcade.player1);
     p1Button.classList.add("hide");
+    player1field.appendChild(player1Welcome);
+
+    showGames.classList.remove("hide");
+    scoreDiv.appendChild(player1Welcome);
+    scoreDiv.appendChild(p1Score);
+    showGames.appendChild(scoreDiv);
+
+    // why is the name not showing up in place of the input field??
   }
 });
 
@@ -18,9 +62,15 @@ const input2 = document.querySelector("#p2-name");
 const p2Button = document.querySelector("#p2-submit");
 p2Button.addEventListener("click", () => {
   if (input2.value) {
-    player2 = input2.value;
-    input2.replaceWith(player2);
+    arcade.player2 = input2.value;
+    const player2Welcome = document.createElement("h3");
+    console.log(player2Welcome);
+    player2Welcome.textContent = `${arcade.player2}`;
+    input2.classList.add("hide");
+
+    // input2.replaceWith(arcade.player2);
     p2Button.classList.add("hide");
+    player2field.appendChild(player2Welcome);
   }
 });
 
@@ -75,8 +125,12 @@ function addToken(e) {
       break;
     }
   }
-  // find the location on the board
+  if (c4Array[row][column]) {
+    console.log("Please Choose an empty column");
+    return;
+  }
   const token = document.querySelectorAll(`[data-column="${column}"]`)[row];
+
   // check which players turn it is and place token
   let color;
   if (isPlayer1Turn) {
@@ -92,9 +146,13 @@ function addToken(e) {
   }
 
   // then check to see if the current move wins
-  checkHorizontal(row);
-  checkVertical(column);
-  checkDiagonal(row, column);
+  if (
+    checkHorizontal(row) ||
+    checkVertical(column) ||
+    checkDiagonal(row, column)
+  ) {
+    console.log("CONGRATULATIONS TO THE WINNER!");
+  }
 }
 c4Board.addEventListener("click", addToken);
 
@@ -130,14 +188,6 @@ function checkWin(arr) {
 function checkHorizontal(row) {
   return checkWin(c4Array[row]);
 }
-/* function checkHorizontal() {
-  for (let i = c4Array.length - 1; i >= 0; i--) {
-    if (checkWin(c4Array[i])) {
-      return true;
-    }
-  }
-  return false;
-} */
 
 // check Vertical for win
 function checkVertical(col) {
@@ -148,30 +198,12 @@ function checkVertical(col) {
   return checkWin(checkArray);
 }
 
-/* function checkVertical() {
-  let checkArray = [];
-  let columnIdx = 0;
-  while (columnIdx < c4Array[0].length) {
-    for (let i = 0; i < c4Array.length; i++) {
-      checkArray.push(c4Array[i][columnIdx]);
-    }
-    if (checkWin(checkArray)) {
-      return true;
-    }
-    columnIdx += 1;
-    checkArray = [];
-  }
-  return false;
-} */
-
 // check Diagonal for win
 function checkDiagonal(row, col) {
   let checkArrayRtoL = [];
   let checkArrayLtoR = [];
   // first find starting positions to collect new arrays
-  let topToToken = row;
   let bottomToToken = c4Array.length - 1 - row;
-
   // create an array from right to left
   let startColRtoL = Number(col) + bottomToToken;
   let startRowRtoL = c4Array.length - 1;
@@ -184,7 +216,6 @@ function checkDiagonal(row, col) {
     checkArrayRtoL.push(c4Array[i][j]);
     j -= 1;
   }
-
   // create an array from left to right
   let startColLtoR = Number(col) - bottomToToken;
   let startRowLtoR = c4Array.length - 1;
@@ -197,50 +228,9 @@ function checkDiagonal(row, col) {
     checkArrayLtoR.push(c4Array[i][j]);
     j += 1;
   }
-
   // check if either arrays have a winning number of tokens in a row
-  //   console.log(checkArrayLtoR);
-  //   console.log(checkArrayRtoL);
   if (checkWin(checkArrayRtoL) || checkWin(checkArrayLtoR)) {
     return true;
   }
   return false;
 }
-
-/* function checkDiagonal() {
-  let downRight = [];
-  let downLeft = [];
-  let upRight = [];
-  let upLeft = [];
-  let colIdxRight;
-  let colIdxLeft;
-  for (let i = 0; i < c4Array[0].length; i++) {
-    colIdxRight = i;
-    colIdxLeft = i;
-    for (row in c4Array) {
-      downRight.push(c4Array[row][colIdxRight]);
-      upRight.push(c4Array[c4Array.length - row - 1][colIdxRight]);
-      colIdxRight += 1;
-      downLeft.push(c4Array[row][colIdxLeft]);
-      upLeft.push(c4Array[c4Array.length - row - 1][colIdxLeft]);
-      colIdxLeft -= 1;
-    }
-    if (checkWin(downRight)) {
-      return true;
-    }
-    downRight = [];
-    if (checkWin(upRight)) {
-      return true;
-    }
-    upRight = [];
-    if (checkWin(downLeft)) {
-      return true;
-    }
-    downLeft = [];
-    if (checkWin(upLeft)) {
-      return true;
-    }
-    upLeft = [];
-  }
-  return false;
-} */

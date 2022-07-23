@@ -14,6 +14,20 @@ html {
     display: none;
 }
 
+.input-name {
+    display: flex;
+    align-items: center;
+    margin: 10px;
+}
+
+.input-name input {
+    margin-left: 10px
+}
+
+.input-name h3 {
+    margin-left: 20px;
+}
+
 #connect-board {
     margin: 20px;
     padding: 10px;
