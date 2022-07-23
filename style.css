@@ -1,0 +1,48 @@
+/* color scheme: https://coolors.co/d81159-8f2d56-218380-fbb13c-73d2de */
+
+* {
+    box-sizing: border-box;
+    padding: 0;
+    margin: 0;
+}
+
+html {
+    font-family: 'Quicksand', sans-serif;
+}
+
+.hide {
+    display: none;
+}
+
+#connect-board {
+    margin: 20px;
+    padding: 10px;
+    width: 404px;
+    height: 350px;
+    background-color: #218380;
+    border: 2px solid black;
+    display: flex;
+    flex-wrap: wrap;
+    border-radius: 20px;
+}
+
+.game-circle {
+    margin: 2px;
+    height: 50px;
+    width: 50px;
+    background-color: white;
+    border: 2px solid black;
+    border-radius: 50%;
+}
+
+.game-circle:hover {
+    background-color: #73D2DE;
+}
+
+.yellow {
+    background-color: #FBB13C;
+}
+
+.red {
+    background-color: #D81159;
+}
