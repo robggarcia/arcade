@@ -4,6 +4,7 @@ const arcade = {
     name: "Computer",
     color: "red",
     score: 0,
+    turn: true,
   },
   player2: {
     name: "Computer",
@@ -16,65 +17,62 @@ const arcade = {
 
 const body = document.querySelector("body");
 
-// after submitting names, the computer will display welcomes and give the user options for games to play
-const scoreDiv = document.createElement("div");
-scoreDiv.setAttribute("id", "scores");
-const p1StatsDiv = document.createElement("div");
-p1StatsDiv.classList.add("stats");
-const p2StatsDiv = document.createElement("div");
-p2StatsDiv.classList.add("stats");
-scoreDiv.appendChild(p1StatsDiv);
-scoreDiv.appendChild(p2StatsDiv);
+const scoreDiv = document.querySelectorAll(".score");
 
-let p1Score = document.createElement("p");
-p1Score.textContent = `Score = ${arcade.player1.score}`;
+const p1Score = document.querySelector("#p1score");
+p1Score.textContent = `Score: ${arcade.player1.score}`;
+const p1Name = document.querySelector("#p1name");
+const p1Turn = document.querySelector("#p1turn");
 
-let p2Score = document.createElement("p");
-p2Score.textContent = `Score = ${arcade.player2.score}`;
+const p2Score = document.querySelector("#p2score");
+p2Score.textContent = `Score: ${arcade.player2.score}`;
+const p2Name = document.querySelector("#p2name");
+const p2Turn = document.querySelector("#p2turn");
 
 const input1 = document.querySelector("#p1-name");
 const p1Button = document.querySelector("#p1-submit");
 const player1field = document.querySelector("#input-name1");
-const player2field = document.querySelector("#input-name2");
 
 const showGames = document.querySelector(".select-game");
+const message = document.querySelector("#message");
 
 p1Button.addEventListener("click", () => {
   if (input1.value) {
-    arcade.player1 = input1.value;
-    const player1Welcome = document.createElement("h3");
-    player1Welcome.textContent = `${arcade.player1}`;
+    arcade.player1.name = input1.value;
+    const player1Input = document.createElement("h3");
+    player1Input.textContent = `${arcade.player1.name}`;
     input1.classList.add("hide");
-    // input1.replaceWith(arcade.player1);
     p1Button.classList.add("hide");
-    player1field.appendChild(player1Welcome);
+    player1field.appendChild(player1Input);
 
+    p1Name.textContent = `${arcade.player1.name}`;
+    scoreDiv[0].classList.remove("hide");
+    scoreDiv[1].classList.remove("hide");
     showGames.classList.remove("hide");
-    scoreDiv.appendChild(player1Welcome);
-    scoreDiv.appendChild(p1Score);
-    showGames.appendChild(scoreDiv);
-
-    // why is the name not showing up in place of the input field??
+    message.classList.add("hide");
   }
 });
 
 const input2 = document.querySelector("#p2-name");
 const p2Button = document.querySelector("#p2-submit");
+const player2field = document.querySelector("#input-name2");
+
 p2Button.addEventListener("click", () => {
   if (input2.value) {
-    arcade.player2 = input2.value;
-    const player2Welcome = document.createElement("h3");
-    console.log(player2Welcome);
-    player2Welcome.textContent = `${arcade.player2}`;
+    arcade.player2.name = input2.value;
+    const player2Input = document.createElement("h3");
+    player2Input.textContent = `${arcade.player2.name}`;
     input2.classList.add("hide");
-
-    // input2.replaceWith(arcade.player2);
     p2Button.classList.add("hide");
-    player2field.appendChild(player2Welcome);
+    player2field.appendChild(player2Input);
+
+    p2Name.textContent = `${arcade.player2.name}`;
+    scoreDiv[0].classList.remove("hide");
+    scoreDiv[1].classList.remove("hide");
+    showGames.classList.remove("hide");
+    message.classList.add("hide");
   }
 });
-
-let isPlayer1Turn = true;
 
 ///////////// CONNECT 4 /////////////
 
@@ -90,16 +88,15 @@ c4rules.textContent =
   "Be the first to form a horizontal, vertical, or diagonal line of four of one's own tokens.";
 
 // the board is traditionally 7 columns, by 6 rows
-let c4Array = [];
 
 const c4gameDiv = document.querySelector("#game");
 function newC4Board() {
-  c4Array = [];
+  arcade.board = [];
   c4Board.textContent = "";
   for (let i = 0; i < 6; i++) {
-    c4Array[i] = [];
+    arcade.board[i] = [];
     for (let j = 0; j < 7; j++) {
-      c4Array[i].push("");
+      arcade.board[i].push("");
       let circleDiv = document.createElement("div");
       circleDiv.setAttribute("class", "game-circle");
       c4Board.appendChild(circleDiv);
@@ -110,40 +107,63 @@ function newC4Board() {
   c4gameDiv.appendChild(c4Title);
   c4gameDiv.appendChild(c4rules);
   c4gameDiv.appendChild(c4Board);
+
+  // randomly choose a player to start
+  if (Math.floor(Math.random() * 10) % 2 === 0) {
+    scoreDiv[0].classList.add(`${arcade.player1.color}`);
+    p1Turn.classList.remove("hide");
+  } else {
+    arcade.player1.turn = false;
+    scoreDiv[1].classList.add(`${arcade.player2.color}`);
+    p2Turn.classList.remove("hide");
+  }
 }
 const c4Button = document.querySelector("#c4-button");
 c4Button.addEventListener("click", newC4Board);
 
 // when a player clicks on a column, their token color is placed on the bottom row
 function addToken(e) {
+  console.log(arcade.message);
+  message.classList.add("hide");
   // find the location to add token
   let column = e.target.dataset.column;
   let row = e.target.dataset.row;
-  for (let i = c4Array.length - 1; i >= 0; i--) {
-    if (!c4Array[i][column]) {
+  for (let i = arcade.board.length - 1; i >= 0; i--) {
+    if (!arcade.board[i][column]) {
       row = i;
       break;
     }
   }
-  if (c4Array[row][column]) {
-    console.log("Please Choose an empty column");
+  if (arcade.board[row][column]) {
+    arcade.message = "Choose an empty column";
+    message.textContent = arcade.message;
+    message.classList.remove("hide");
     return;
   }
   const token = document.querySelectorAll(`[data-column="${column}"]`)[row];
 
   // check which players turn it is and place token
-  let color;
-  if (isPlayer1Turn) {
-    color = "red";
-    c4Array[row][column] = color;
-    token.classList.add(color);
-    isPlayer1Turn = !isPlayer1Turn;
+  if (arcade.player1.turn) {
+    arcade.board[row][column] = arcade.player1.color;
+    token.classList.add(`${arcade.player1.color}`);
+    console.log(arcade.player1.turn);
+    arcade.player1.turn = !arcade.player1.turn;
+    scoreDiv[0].classList.remove(`${arcade.player1.color}`);
+    p1Turn.classList.add("hide");
+    scoreDiv[1].classList.add(`${arcade.player2.color}`);
+    p2Turn.classList.remove("hide");
   } else {
-    color = "yellow";
-    c4Array[row][column] = color;
-    token.classList.add(color);
-    isPlayer1Turn = !isPlayer1Turn;
+    arcade.board[row][column] = arcade.player2.color;
+    token.classList.add(`${arcade.player2.color}`);
+    console.log(arcade.player1.turn);
+    arcade.player1.turn = !arcade.player1.turn;
+    scoreDiv[0].classList.add(`${arcade.player1.color}`);
+    p2Turn.classList.remove("hide");
+    scoreDiv[1].classList.remove(`${arcade.player2.color}`);
+    p1Turn.classList.remove("hide");
   }
+
+  // NEED TO DISPLAY MESSAGE TO WINNER AND NOT MOVE TO NEXT TURN
 
   // then check to see if the current move wins
   if (
@@ -186,14 +206,14 @@ function checkWin(arr) {
 
 // check Horizontal for win
 function checkHorizontal(row) {
-  return checkWin(c4Array[row]);
+  return checkWin(arcade.board[row]);
 }
 
 // check Vertical for win
 function checkVertical(col) {
   let checkArray = [];
-  for (row in c4Array) {
-    checkArray.push(c4Array[row][col]);
+  for (row in arcade.board) {
+    checkArray.push(arcade.board[row][col]);
   }
   return checkWin(checkArray);
 }
@@ -203,29 +223,29 @@ function checkDiagonal(row, col) {
   let checkArrayRtoL = [];
   let checkArrayLtoR = [];
   // first find starting positions to collect new arrays
-  let bottomToToken = c4Array.length - 1 - row;
+  let bottomToToken = arcade.board.length - 1 - row;
   // create an array from right to left
   let startColRtoL = Number(col) + bottomToToken;
-  let startRowRtoL = c4Array.length - 1;
-  if (startColRtoL > c4Array[0].length - 1) {
-    startColRtoL = c4Array[0].length - 1;
+  let startRowRtoL = arcade.board.length - 1;
+  if (startColRtoL > arcade.board[0].length - 1) {
+    startColRtoL = arcade.board[0].length - 1;
     startRowRtoL = row + startColRtoL - Number(col);
   }
   let j = startColRtoL;
   for (let i = startRowRtoL; i >= 0; i--) {
-    checkArrayRtoL.push(c4Array[i][j]);
+    checkArrayRtoL.push(arcade.board[i][j]);
     j -= 1;
   }
   // create an array from left to right
   let startColLtoR = Number(col) - bottomToToken;
-  let startRowLtoR = c4Array.length - 1;
+  let startRowLtoR = arcade.board.length - 1;
   if (startColLtoR < 0) {
     startColLtoR = 0;
     startRowLtoR = row + Number(col);
   }
   j = startColLtoR;
   for (let i = startRowLtoR; i >= 0; i--) {
-    checkArrayLtoR.push(c4Array[i][j]);
+    checkArrayLtoR.push(arcade.board[i][j]);
     j += 1;
   }
   // check if either arrays have a winning number of tokens in a row

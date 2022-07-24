@@ -8,10 +8,59 @@
 
 html {
     font-family: 'Quicksand', sans-serif;
+    background-color: #fff
 }
 
 .hide {
     display: none;
+}
+
+input {
+    font-size: 16px;
+}
+
+button {
+    font-family: 'Quicksand', sans-serif;
+    font-weight: 600;
+    font-size: 16px;
+}
+
+header {
+    margin-top: 20px;
+    display: flex;
+}
+
+#outer-border {
+    margin: auto;
+    padding: 10px;
+    border: 6px solid #8F2D56;
+    border-radius: 16px;
+
+}
+
+#mid-border {
+    padding: 8px;
+    border: 6px solid #D81159;
+    border-radius: 14px;
+}
+
+#user-interface {
+    display: flex;
+    width: 85vw;
+    margin: auto
+}
+
+#begin {
+    width: 350px;
+    margin: 20px 50px;
+    display: flex;
+    flex-direction: column;
+}
+
+#welcome {
+    padding: 10px;
+    border: 6px solid #FBB13C;
+    border-radius: 12px;
 }
 
 .input-name {
@@ -26,6 +75,40 @@ html {
 
 .input-name h3 {
     margin-left: 20px;
+}
+
+.player-score {
+    display: flex;
+    justify-content: space-around;
+    margin-top: 20px;
+}
+
+.score {
+    padding: 10px;
+    border-radius: 20px;
+}
+
+.select-game {
+    margin: 0px auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+#game-buttons {
+    margin-top: 10px;
+}
+
+.select-game.hide {
+    display: none;
+}
+
+.turn {
+    color: #fff;
+}
+
+#message {
+    margin: 10px auto;
 }
 
 #connect-board {
@@ -59,4 +142,11 @@ html {
 
 .red {
     background-color: #D81159;
+}
+
+#game {
+    margin: 20px auto 10px auto;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
