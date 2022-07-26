@@ -120,17 +120,23 @@ function newC4Board() {
   // randomly choose a player to start
   if (Math.floor(Math.random() * 10) % 2 === 0) {
     scoreDiv[0].classList.add(`${arcade.player1.color}`);
+    play = true;
+    if (arcade.player1.name === "Computer") {
+      setTimeout(compTurn, 1000);
+      return;
+    }
   } else {
     arcade.player1.turn = false;
     scoreDiv[1].classList.add(`${arcade.player2.color}`);
+    play = true;
+    if (arcade.player2.name === "Computer") {
+      setTimeout(compTurn, 1000);
+      return;
+    }
   }
-  play = true;
 }
 const c4Button = document.querySelector("#c4-button");
 c4Button.addEventListener("click", newC4Board);
-
-// define global variables: name and color
-// set use scoredDiv[0].toggle("hide") and scoreDiv[1].toggle("hide")
 
 // when a player clicks on a column, their token color is placed on the bottom row
 function addToken(e) {
@@ -146,17 +152,9 @@ function addToken(e) {
     // find the location to add token
     let column = e.target.dataset.column;
     let row = e.target.dataset.row;
-    for (let i = arcade.board.length - 1; i >= 0; i--) {
-      if (!arcade.board[i][column]) {
-        row = i;
-        break;
-      }
-    }
-    if (arcade.board[row][column]) {
-      message.textContent = "Choose an empty column";
-      message.classList.remove("hide");
-      return;
-    }
+
+    row = lowestRow(row, column);
+
     const token = document.querySelectorAll(`[data-column="${column}"]`)[row];
     arcade.board[row][column] = color;
     token.classList.add(`${color}`);
@@ -182,17 +180,23 @@ function addToken(e) {
     if (arcade.player1.turn) {
       scoreDiv[0].classList.remove(`${arcade.player1.color}`);
       scoreDiv[1].classList.add(`${arcade.player2.color}`);
+      arcade.player1.turn = !arcade.player1.turn;
+      if (arcade.player2.name === "Computer") {
+        setTimeout(compTurn, 1000, arcade.player2.color);
+      }
     } else {
       scoreDiv[0].classList.add(`${arcade.player1.color}`);
       scoreDiv[1].classList.remove(`${arcade.player2.color}`);
+      arcade.player1.turn = !arcade.player1.turn;
+      if (arcade.player1.name === "Computer") {
+        setTimeout(compTurn, 1000, arcade.player1.color);
+      }
     }
-    arcade.player1.turn = !arcade.player1.turn;
   }
 }
 c4Board.addEventListener("click", addToken);
 
 // define a function to check for 4 same tokens in a row, given a single array to check
-// let winningColor;
 function checkWin(arr) {
   let count = 1;
   let color = "";
@@ -208,8 +212,6 @@ function checkWin(arr) {
       prevColor = color;
       if (count === 4) {
         console.log(`${color} wins!`);
-        // winningColor = color;
-
         return true;
       }
     } else {
@@ -269,4 +271,55 @@ function checkDiagonal(row, col) {
     return true;
   }
   return false;
+}
+
+function lowestRow(row, col) {
+  for (let i = arcade.board.length - 1; i >= 0; i--) {
+    if (!arcade.board[i][col]) {
+      row = i;
+      return row;
+    }
+  }
+  if (arcade.board[row][col]) {
+    message.textContent = "Choose an empty column";
+    message.classList.remove("hide");
+    return false;
+  }
+}
+
+// if either player is the computer create a function play their turn
+// check each column to see if a winning token will be placed
+// if a win, place token in that location
+// if not, randomly choose a column
+function compTurn(color) {
+  let col = 0;
+  let row = 0;
+  let event = {
+    target: {
+      dataset: {
+        column: col,
+        row: row,
+      },
+    },
+  };
+  for (let i = 0; i < arcade.board[0].length; i++) {
+    col = i;
+    row = lowestRow(row, col);
+    arcade.board[row][col] = color;
+    if (checkHorizontal(row) || checkVertical(col) || checkDiagonal(row, col)) {
+      event.target.dataset.column = col;
+      event.target.dataset.row = row;
+      arcade.board[row][col] = "";
+
+      addToken(event);
+      return;
+    }
+    arcade.board[row][col] = "";
+  }
+  col = Math.floor(Math.random() * arcade.board[0].length);
+  console.log("computer column, ", col);
+  event.target.dataset.column = col;
+  event.target.dataset.row = lowestRow(row, col);
+  addToken(event);
+  return;
 }
