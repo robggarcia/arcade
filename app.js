@@ -5,11 +5,13 @@ const arcade = {
     color: "red",
     score: 0,
     turn: true,
+    symbol: "X",
   },
   player2: {
     name: "Computer",
     color: "yellow",
     score: 0,
+    symbol: "O",
   },
   board: [],
   message: "",
@@ -75,7 +77,9 @@ p2Button.addEventListener("click", () => {
   }
 });
 
-///////////// CONNECT 4 /////////////
+////////////////////////////////////
+/////////// CONNECT 4 //////////////
+///////////////////////////////////
 
 // set up game div, then display name of game and objective
 const c4Board = document.createElement("div");
@@ -94,8 +98,9 @@ let color = "";
 let play = false;
 
 // the board is traditionally 7 columns, by 6 rows
-const c4gameDiv = document.querySelector("#game");
+const gameDiv = document.querySelector("#game");
 function newC4Board() {
+  gameDiv.textContent = "";
   arcade.board = [];
   c4Board.textContent = "";
   message.classList.add("hide");
@@ -113,9 +118,9 @@ function newC4Board() {
       circleDiv.dataset.row = i;
     }
   }
-  c4gameDiv.appendChild(c4Title);
-  c4gameDiv.appendChild(c4rules);
-  c4gameDiv.appendChild(c4Board);
+  gameDiv.appendChild(c4Title);
+  gameDiv.appendChild(c4rules);
+  gameDiv.appendChild(c4Board);
 
   // randomly choose a player to start
   if (Math.floor(Math.random() * 10) % 2 === 0) {
@@ -192,6 +197,7 @@ function addToken(e) {
         setTimeout(compTurn, 1000, arcade.player1.color);
       }
     }
+    checkDraw();
   }
 }
 c4Board.addEventListener("click", addToken);
@@ -273,6 +279,8 @@ function checkDiagonal(row, col) {
   return false;
 }
 
+// this function selects the lowest available row for a given column
+// if a row is not available, a message is sent explaining to choose another column
 function lowestRow(row, col) {
   for (let i = arcade.board.length - 1; i >= 0; i--) {
     if (!arcade.board[i][col]) {
@@ -287,11 +295,33 @@ function lowestRow(row, col) {
   }
 }
 
+// this function checks the current status of the board
+// if all spots on the board are full, gameplay is set to false and message is displayed
+function checkDraw() {
+  for (row of arcade.board) {
+    for (col in row) {
+      if (row[col] === "") {
+        console.log("there is still an empty space");
+        return false;
+      }
+    }
+  }
+  message.textContent = "No More Moves Available :(";
+  message.classList.remove("hide");
+  scoreDiv[0].classList.remove(`${arcade.player1.color}`);
+  scoreDiv[1].classList.remove(`${arcade.player2.color}`);
+  play = false;
+  return true;
+}
+
 // if either player is the computer create a function play their turn
 // check each column to see if a winning token will be placed
 // if a win, place token in that location
 // if not, randomly choose a column
 function compTurn(color) {
+  if (checkDraw()) {
+    return;
+  }
   let col = 0;
   let row = 0;
   let event = {
@@ -323,3 +353,373 @@ function compTurn(color) {
   addToken(event);
   return;
 }
+
+///////////////////////////////////////
+/////////// TIC TAC TOE //////////////
+/////////////////////////////////////
+
+// set up game div, then display name of game and objective
+const ticBoard = document.createElement("div");
+ticBoard.setAttribute("id", "tic-board");
+
+const ticTitle = document.createElement("h2");
+ticTitle.textContent = "Tic-Tac-Toe";
+
+const ticRules = document.createElement("p");
+ticRules.textContent =
+  "The first player to get 3 marks in a row is the winner.";
+
+// the board is traditionally 3 columns, by 3 rows
+function newTicBoard() {
+  gameDiv.textContent = "";
+  arcade.board = [];
+  ticBoard.textContent = "";
+  message.classList.add("hide");
+  scoreDiv[0].classList.remove(`${arcade.player1.color}`);
+  scoreDiv[1].classList.remove(`${arcade.player2.color}`);
+
+  for (let i = 0; i < 3; i++) {
+    arcade.board[i] = [];
+    for (let j = 0; j < 3; j++) {
+      arcade.board[i].push("");
+      let ticTocDiv = document.createElement("div");
+      ticTocDiv.setAttribute("class", "tic-square");
+      ticBoard.appendChild(ticTocDiv);
+      ticTocDiv.dataset.column = j;
+      ticTocDiv.dataset.row = i;
+    }
+  }
+  gameDiv.appendChild(ticTitle);
+  gameDiv.appendChild(ticRules);
+  gameDiv.appendChild(ticBoard);
+
+  // randomly choose a player to start
+  if (Math.floor(Math.random() * 10) % 2 === 0) {
+    scoreDiv[0].classList.add(`${arcade.player1.color}`);
+    play = true;
+    if (arcade.player1.name === "Computer") {
+      setTimeout(compTic, 1000, arcade.player1.symbol);
+      return;
+    }
+  } else {
+    arcade.player1.turn = false;
+    scoreDiv[1].classList.add(`${arcade.player2.color}`);
+    play = true;
+    if (arcade.player2.name === "Computer") {
+      setTimeout(compTic, 1000, arcade.player2.symbol);
+      return;
+    }
+  }
+}
+const ticButton = document.querySelector("#tic-button");
+ticButton.addEventListener("click", newTicBoard);
+
+// set global variables to switch between players
+let symbol = "";
+
+// when a player selects a location on the board, their symbol is placed
+function ticPlay(e) {
+  if (play) {
+    message.classList.add("hide");
+    if (arcade.player1.turn) {
+      symbol = arcade.player1.symbol;
+      name = arcade.player1.name;
+    } else {
+      symbol = arcade.player2.symbol;
+      name = arcade.player2.name;
+    }
+    // find the location to add token
+    let column = e.target.dataset.column;
+    let row = e.target.dataset.row;
+
+    const mark = document.querySelectorAll(`[data-column="${column}"]`)[row];
+    console.log(mark);
+    arcade.board[row][column] = symbol;
+    mark.textContent = symbol;
+
+    if (checkTicWin(row, column)) {
+      message.textContent = `${name} wins!!`;
+      message.classList.remove("hide");
+      play = false;
+      if (arcade.player1.turn) {
+        arcade.player1.score += 5;
+        p1Score.textContent = `Score: ${arcade.player1.score}`;
+        scoreDiv[0].classList.remove(`${arcade.player1.color}`);
+      } else {
+        arcade.player2.score += 5;
+        p2Score.textContent = `Score: ${arcade.player2.score}`;
+        scoreDiv[1].classList.remove(`${arcade.player2.color}`);
+      }
+      return;
+    }
+    if (arcade.player1.turn) {
+      scoreDiv[0].classList.remove(`${arcade.player1.color}`);
+      scoreDiv[1].classList.add(`${arcade.player2.color}`);
+      arcade.player1.turn = !arcade.player1.turn;
+      if (arcade.player2.name === "Computer") {
+        setTimeout(compTic, 1000, symbol);
+      }
+    } else {
+      scoreDiv[0].classList.add(`${arcade.player1.color}`);
+      scoreDiv[1].classList.remove(`${arcade.player2.color}`);
+      arcade.player1.turn = !arcade.player1.turn;
+      if (arcade.player1.name === "Computer") {
+        setTimeout(compTic, 1000, symbol);
+      }
+    }
+    checkDraw();
+  }
+}
+ticBoard.addEventListener("click", ticPlay);
+
+function checkTicWin(row, col) {
+  let arr = arcade.board;
+  // check horizontal
+  if (arr[row][0] === arr[row][1] && arr[row][1] === arr[row][2]) {
+    console.log("win horizontal");
+    return true;
+  }
+  // reset and check vertical
+  if (arr[0][col] === arr[1][col] && arr[1][col] === arr[2][col]) {
+    console.log("win vertical");
+    return true;
+  }
+  //check diagonal
+  if (arr[1][1]) {
+    if (arr[0][0] === arr[1][1] && arr[1][1] === arr[2][2]) {
+      return true;
+    }
+    if (arr[2][0] === arr[1][1] && arr[1][1] === arr[0][2]) {
+      return true;
+    }
+  }
+  return false;
+}
+
+// for the computer, check through open spots to see if any would win the game
+// if not, chose a random open spot
+function compTic(symbol) {
+  if (checkDraw()) {
+    return;
+  }
+  let event = {
+    target: {
+      dataset: {
+        column: randomTic(),
+        row: randomTic(),
+      },
+    },
+  };
+  for (rowIdx in arcade.board) {
+    for (colIdx in arcade.board[rowIdx]) {
+      if (arcade.board[rowIdx][colIdx] === "") {
+        console.log("an empty field was found");
+        arcade.board[rowIdx][colIdx] = symbol;
+        if (checkTicWin(rowIdx, colIdx)) {
+          arcade.board[rowIdx][colIdx] = "";
+          event.target.dataset.column = colIdx;
+          event.target.dataset.row = rowIdx;
+          ticPlay(event);
+          return;
+        }
+        arcade.board[rowIdx][colIdx] = "";
+      }
+    }
+  }
+  if (
+    arcade.board[event.target.dataset.row][event.target.dataset.column] === ""
+  ) {
+    ticPlay(event);
+    return;
+  }
+  compTic(symbol);
+}
+
+function randomTic() {
+  return Math.floor(Math.random() * arcade.board[0].length);
+}
+
+///////////////////////////////////////
+////////////// SNAKE /////////////////
+/////////////////////////////////////
+
+// set up game div, then display name of game and objective
+const snakeBoard = document.createElement("div");
+snakeBoard.setAttribute("id", "snake-board");
+
+const snakeTitle = document.createElement("h2");
+snakeTitle.textContent = "Snake";
+
+const snakeRules = document.createElement("p");
+snakeRules.textContent =
+  "Use the arrows on your keyboard to control the snake. \nEat apples, but don't run into yourself!";
+
+let snake = {};
+let snakeState = {};
+
+// the board is traditionally 3 columns, by 3 rows
+function newSnakeBoard() {
+  gameDiv.textContent = "";
+  arcade.board = [];
+  snakeBoard.textContent = "";
+  message.classList.add("hide");
+  scoreDiv[0].classList.remove(`${arcade.player1.color}`);
+  scoreDiv[1].classList.remove(`${arcade.player2.color}`);
+  let count = 0;
+  for (let i = 0; i < 20; i++) {
+    arcade.board[i] = [];
+    for (let j = 0; j < 20; j++) {
+      arcade.board[i].push("");
+      let snakeDiv = document.createElement("div");
+      snakeDiv.setAttribute("class", "snake-square");
+      snakeBoard.appendChild(snakeDiv);
+      snakeDiv.dataset.column = j;
+      snakeDiv.dataset.row = i;
+      count += 1;
+    }
+  }
+  gameDiv.appendChild(snakeTitle);
+  gameDiv.appendChild(snakeRules);
+  gameDiv.appendChild(snakeBoard);
+
+  // define the snake object with the starting condition
+  snake = {
+    body: [
+      [10, 5],
+      [10, 6],
+      [10, 7],
+      [10, 8],
+    ],
+    nextDirection: [1, 0],
+  };
+
+  snakeState = {
+    apple: [11, 8],
+    snake: snake, // from above
+  };
+
+  // randomly choose a player to start
+  if (Math.floor(Math.random() * 10) % 2 === 0) {
+    scoreDiv[0].classList.add(`${arcade.player1.color}`);
+  } else {
+    arcade.player1.turn = false;
+    scoreDiv[1].classList.add(`${arcade.player2.color}`);
+    if (arcade.player2.name === "Computer") {
+      scoreDiv[0].classList.add(`${arcade.player1.color}`);
+      scoreDiv[1].classList.remove(`${arcade.player2.color}`);
+      arcade.player1.turn = true;
+    }
+  }
+  message.textContent = "Press S to start.";
+  message.classList.remove("hide");
+  console.log("new snakeboard beging called");
+  renderSnakeState();
+}
+const snakeButton = document.querySelector("#snake-button");
+snakeButton.addEventListener("click", newSnakeBoard);
+
+///////////////////////////////
+
+function tick() {
+  console.log(snake.body);
+
+  play = true;
+  // this is an incremental change that happens to the state every time you update...
+  let nextSnake = [];
+  let prevPart = snake.body[0];
+  let count = 0;
+  for (bodyPart of snake.body) {
+    const square = document.querySelectorAll(`[data-column="${bodyPart[0]}"]`)[
+      bodyPart[1]
+    ];
+    if (count === 0) {
+      nextSnake.push([
+        bodyPart[0] + snake.nextDirection[0],
+        bodyPart[1] + snake.nextDirection[1],
+      ]);
+      // check to see if next move eats an apple
+      if (
+        nextSnake[0][0] === snakeState.apple[0] &&
+        nextSnake[0][1] === snakeState.apple[1]
+      ) {
+        console.log("eating an apple!");
+        eatApple();
+        snake.body.unshift([nextSnake[0][0], nextSnake[0][1]]);
+        return;
+      }
+      // check to see if next move hits a wall
+      if (hitWall()) {
+        return;
+      }
+      // check to see if next move hits self
+      if (hitSelf()) {
+        return;
+      }
+    } else {
+      nextSnake.push(prevPart);
+      prevPart = bodyPart;
+    }
+    count += 1;
+    square.classList.remove("snake-body");
+  }
+  snake.body = nextSnake;
+  renderSnakeState();
+}
+/*
+if (play === true) setInterval(tick, 1000 / 30); // as close to 30 frames per second as possible */
+
+function renderSnakeState() {
+  const apple = document.querySelectorAll(
+    `[data-column="${snakeState.apple[0]}"]`
+  )[snakeState.apple[1]];
+  apple.classList.add("apple");
+  for (bodyPart of snake.body) {
+    const square = document.querySelectorAll(`[data-column="${bodyPart[0]}"]`)[
+      bodyPart[1]
+    ];
+    square.classList.add("snake-body");
+  }
+}
+
+function eatApple() {
+  const appleToSnake = document.querySelectorAll(
+    `[data-column="${snakeState.apple[0]}"]`
+  )[snakeState.apple[1]];
+  appleToSnake.classList.remove("apple");
+  appleToSnake.classList.add("snake-body");
+  // find a random location for a new apple
+  newApple();
+}
+
+// randomly select an open location to place a new apple
+function newApple() {
+  let randRow = randomTic();
+  let randCol = randomTic();
+  const newApple = document.querySelectorAll(`[data-column="${randRow}"]`)[
+    randCol
+  ];
+  if (
+    newApple.classList.contains("apple") ||
+    newApple.classList.contains("snake-body")
+  ) {
+    newApple();
+  }
+  snakeState.apple[0] = randRow;
+  snakeState.apple[1] = randCol;
+  newApple.classList.add("apple");
+}
+
+// add event listeners for keyboard hits and define what specific buttons do
+document.addEventListener("keydown", (e) => {
+  e.code === "ArrowLeft"
+    ? (snake.nextDirection = [-1, 0])
+    : e.code === "ArrowUp"
+    ? (snake.nextDirection = [0, -1])
+    : e.code === "ArrowRight"
+    ? (snake.nextDirection = [1, 0])
+    : e.code === "ArrowDown"
+    ? (snake.nextDirection = [0, 1])
+    : e.code === "KeyS"
+    ? tick() // play=true;
+    : console.log("choose another");
+});
