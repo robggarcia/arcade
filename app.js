@@ -179,6 +179,7 @@ function addToken(e) {
       scoreDiv[1].classList.add(`${arcade.player2.color}`);
       arcade.player1.turn = !arcade.player1.turn;
       if (arcade.player2.name === "Computer") {
+        c4Board.removeEventListener("click", addToken); // disable click event
         setTimeout(compTurn, 1000, arcade.player2.color);
       }
     } else {
@@ -186,7 +187,9 @@ function addToken(e) {
       scoreDiv[1].classList.remove(`${arcade.player2.color}`);
       arcade.player1.turn = !arcade.player1.turn;
       if (arcade.player1.name === "Computer") {
+        c4Board.removeEventListener("click", addToken); // disable click event
         setTimeout(compTurn, 1000, arcade.player1.color);
+        // disable click event
       }
     }
     checkDraw();
@@ -324,6 +327,7 @@ function compTurn(color) {
   if (checkDraw()) {
     return;
   }
+  c4Board.addEventListener("click", addToken);
   let col = 0;
   let row = 0;
   let event = {
@@ -334,7 +338,7 @@ function compTurn(color) {
       },
     },
   };
-  for (col in arcade.board[0]) {
+  for (let col in arcade.board[0]) {
     console.log("lowest row: ", lowestRow(row, col));
     if (lowestRow(row, col)) {
       row = lowestRow(row, col);
@@ -449,37 +453,70 @@ function ticPlay(e) {
     let column = e.target.dataset.column;
     let row = e.target.dataset.row;
 
-    const mark = document.querySelectorAll(`[data-column="${column}"]`)[row];
-    console.log(mark);
-    arcade.board[row][column] = symbol;
-    mark.textContent = symbol;
+    // check to see if click location is open
+    if (checkTic(row, column)) {
+      const mark = document.querySelectorAll(`[data-column="${column}"]`)[row];
+      console.log(mark);
+      arcade.board[row][column] = symbol;
+      mark.textContent = symbol;
 
-    if (checkTicWin(row, column)) {
-      message.textContent = `${name} wins!!`;
-      message.classList.remove("hide");
-      play = false;
-      updateScore(5);
-      return;
-    }
-    if (arcade.player1.turn) {
-      scoreDiv[0].classList.remove(`${arcade.player1.color}`);
-      scoreDiv[1].classList.add(`${arcade.player2.color}`);
-      arcade.player1.turn = !arcade.player1.turn;
-      if (arcade.player2.name === "Computer") {
-        setTimeout(compTic, 1000, symbol);
+      if (checkTicWin(row, column)) {
+        message.textContent = `${name} wins!!`;
+        message.classList.remove("hide");
+        play = false;
+        updateScore(5);
+        return;
       }
-    } else {
-      scoreDiv[0].classList.add(`${arcade.player1.color}`);
-      scoreDiv[1].classList.remove(`${arcade.player2.color}`);
-      arcade.player1.turn = !arcade.player1.turn;
-      if (arcade.player1.name === "Computer") {
-        setTimeout(compTic, 1000, symbol);
+      if (arcade.player1.turn) {
+        scoreDiv[0].classList.remove(`${arcade.player1.color}`);
+        scoreDiv[1].classList.add(`${arcade.player2.color}`);
+        arcade.player1.turn = !arcade.player1.turn;
+        if (arcade.player2.name === "Computer") {
+          ticBoard.removeEventListener("click", ticPlay); // remove click event listener
+          setTimeout(compTic, 1000, symbol);
+        }
+      } else {
+        scoreDiv[0].classList.add(`${arcade.player1.color}`);
+        scoreDiv[1].classList.remove(`${arcade.player2.color}`);
+        arcade.player1.turn = !arcade.player1.turn;
+        if (arcade.player1.name === "Computer") {
+          ticBoard.removeEventListener("click", ticPlay); // remove click event listener
+          setTimeout(compTic, 1000, symbol);
+        }
       }
     }
-    checkDraw();
+    checkDrawTic();
   }
 }
 ticBoard.addEventListener("click", ticPlay);
+
+// check if the current move is valid. If not, a message is set explaining to choose again
+function checkTic(row, col) {
+  if (arcade.board[row][col] === "") {
+    return true;
+  }
+  message.textContent = "Choose an empty square";
+  message.classList.remove("hide");
+  return false;
+}
+
+function checkDrawTic() {
+  for (let row in arcade.board) {
+    for (let col of arcade.board[row]) {
+      if (col === "") {
+        console.log("there is still an empty space");
+        return false;
+      }
+    }
+  }
+
+  message.textContent = "No More Moves Available :(";
+  message.classList.remove("hide");
+  scoreDiv[0].classList.remove(`${arcade.player1.color}`);
+  scoreDiv[1].classList.remove(`${arcade.player2.color}`);
+  play = false;
+  return true;
+}
 
 function checkTicWin(row, col) {
   let arr = arcade.board;
@@ -508,9 +545,10 @@ function checkTicWin(row, col) {
 // for the computer, check through open spots to see if any would win the game
 // if not, chose a random open spot
 function compTic(symbol) {
-  if (checkDraw()) {
+  if (checkDrawTic()) {
     return;
   }
+  ticBoard.addEventListener("click", ticPlay);
   let event = {
     target: {
       dataset: {
@@ -519,6 +557,7 @@ function compTic(symbol) {
       },
     },
   };
+  // first iterate through all available moves and see if there is a winning location
   for (rowIdx in arcade.board) {
     for (colIdx in arcade.board[rowIdx]) {
       if (arcade.board[rowIdx][colIdx] === "") {
@@ -535,13 +574,14 @@ function compTic(symbol) {
       }
     }
   }
+  // if no win, then use random location
   if (
     arcade.board[event.target.dataset.row][event.target.dataset.column] === ""
   ) {
     ticPlay(event);
     return;
   }
-  compTic(symbol);
+  compTic(symbol); // if randomly selected spot is not open, choose again
 }
 
 function randomTic() {
@@ -572,9 +612,6 @@ function newSnakeBoard() {
   gameDiv.textContent = "";
   arcade.board = [];
   snakeBoard.textContent = "";
-  message.classList.add("hide");
-  scoreDiv[0].classList.remove(`${arcade.player1.color}`);
-  scoreDiv[1].classList.remove(`${arcade.player2.color}`);
   let count = 0;
   for (let i = 0; i < 20; i++) {
     arcade.board[i] = [];
@@ -608,18 +645,19 @@ function newSnakeBoard() {
     snake: snake,
     time: 5,
   };
-
-  // randomly choose a player to start
-  if (Math.floor(Math.random() * 10) % 2 === 0) {
+  console.log(arcade.player1.turn);
+  // choose the next player to start
+  if (arcade.player2.name === "Computer" && arcade.player1.turn === false) {
+    arcade.player1.turn = true;
     scoreDiv[0].classList.add(`${arcade.player1.color}`);
-  } else {
-    arcade.player1.turn = false;
+    scoreDiv[1].classList.remove(`${arcade.player2.color}`);
+    console.log("p2 - Computer && turn - false");
+  } else if (arcade.player1.turn === false) {
+    scoreDiv[0].classList.remove(`${arcade.player1.color}`);
     scoreDiv[1].classList.add(`${arcade.player2.color}`);
-    if (arcade.player2.name === "Computer") {
-      scoreDiv[0].classList.add(`${arcade.player1.color}`);
-      scoreDiv[1].classList.remove(`${arcade.player2.color}`);
-      arcade.player1.turn = true;
-    }
+  } else {
+    scoreDiv[0].classList.add(`${arcade.player1.color}`);
+    scoreDiv[1].classList.remove(`${arcade.player2.color}`);
   }
 
   message.textContent = "Press S to start.";
@@ -627,12 +665,17 @@ function newSnakeBoard() {
   renderSnakeState();
 }
 const snakeButton = document.querySelector("#snake-button");
-snakeButton.addEventListener("click", newSnakeBoard);
+snakeButton.addEventListener("click", () => {
+  arcade.player1.turn = "true";
+  newSnakeBoard();
+});
 
 ///////////////////////////////
 
 function tick() {
   if (play) {
+    message.classList.add("hide");
+
     let nextSnake = [];
     let prevPart = snake.body[0];
     let count = 0;
@@ -660,17 +703,8 @@ function tick() {
           hitWall([nextSnake[0][0], nextSnake[0][1]]) ||
           hitSelf([nextSnake[0][0], nextSnake[0][1]])
         ) {
-          if (arcade.player1.turn && arcade.player2.name != "Computer") {
-            return;
-          } else if (arcade.player1.turn) {
-            scoreDiv[0].classList.remove(`${arcade.player1.color}`);
-            scoreDiv[1].classList.add(`${arcade.player2.color}`);
-            arcade.player1.turn = !arcade.player1.turn;
-          } else {
-            scoreDiv[0].classList.add(`${arcade.player1.color}`);
-            scoreDiv[1].classList.remove(`${arcade.player2.color}`);
-            arcade.player1.turn = !arcade.player1.turn;
-          }
+          setTimeout(newSnakeBoard, 1000);
+          return;
         }
       } else {
         nextSnake.push(prevPart);
@@ -754,6 +788,7 @@ function hitWall(arr) {
     message.textContent = "Hit Wall! Game Over";
     message.classList.remove("hide");
     play = false;
+    arcade.player1.turn = !arcade.player1.turn;
     return true;
   }
 }
@@ -768,6 +803,7 @@ function hitSelf(head) {
     message.textContent = "Hit Self! Game Over";
     message.classList.remove("hide");
     play = false;
+    arcade.player1.turn = !arcade.player1.turn;
     return true;
   }
 }
