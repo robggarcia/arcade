@@ -171,15 +171,7 @@ function addToken(e) {
       message.textContent = `${name} wins!!`;
       message.classList.remove("hide");
       play = false;
-      if (arcade.player1.turn) {
-        arcade.player1.score += 25;
-        p1Score.textContent = `Score: ${arcade.player1.score}`;
-        scoreDiv[0].classList.remove(`${arcade.player1.color}`);
-      } else {
-        arcade.player2.score += 25;
-        p2Score.textContent = `Score: ${arcade.player2.score}`;
-        scoreDiv[1].classList.remove(`${arcade.player2.color}`);
-      }
+      updateScore(25);
       return;
     }
     if (arcade.player1.turn) {
@@ -283,35 +275,45 @@ function checkDiagonal(row, col) {
 // if a row is not available, a message is sent explaining to choose another column
 function lowestRow(row, col) {
   for (let i = arcade.board.length - 1; i >= 0; i--) {
-    if (!arcade.board[i][col]) {
+    if (arcade.board[i][col] === "") {
       row = i;
       return row;
     }
   }
-  if (arcade.board[row][col]) {
-    message.textContent = "Choose an empty column";
-    message.classList.remove("hide");
-    return false;
-  }
+  message.textContent = "Choose an empty column";
+  message.classList.remove("hide");
+  return false;
 }
 
 // this function checks the current status of the board
 // if all spots on the board are full, gameplay is set to false and message is displayed
 function checkDraw() {
-  for (row of arcade.board) {
-    for (col in row) {
-      if (row[col] === "") {
-        console.log("there is still an empty space");
-        return false;
-      }
+  for (col of arcade.board[0]) {
+    if (col === "") {
+      console.log("there is still an empty space");
+      return false;
     }
   }
+
   message.textContent = "No More Moves Available :(";
   message.classList.remove("hide");
   scoreDiv[0].classList.remove(`${arcade.player1.color}`);
   scoreDiv[1].classList.remove(`${arcade.player2.color}`);
   play = false;
   return true;
+}
+
+// this function accepts a point value and adds it to the current users score and updates the HTML
+function updateScore(score) {
+  if (arcade.player1.turn) {
+    arcade.player1.score += score;
+    p1Score.textContent = `Score: ${arcade.player1.score}`;
+    scoreDiv[0].classList.remove(`${arcade.player1.color}`);
+  } else {
+    arcade.player2.score += score;
+    p2Score.textContent = `Score: ${arcade.player2.score}`;
+    scoreDiv[1].classList.remove(`${arcade.player2.color}`);
+  }
 }
 
 // if either player is the computer create a function play their turn
@@ -332,26 +334,41 @@ function compTurn(color) {
       },
     },
   };
-  for (let i = 0; i < arcade.board[0].length; i++) {
-    col = i;
-    row = lowestRow(row, col);
-    arcade.board[row][col] = color;
-    if (checkHorizontal(row) || checkVertical(col) || checkDiagonal(row, col)) {
-      event.target.dataset.column = col;
-      event.target.dataset.row = row;
+  for (col in arcade.board[0]) {
+    console.log("lowest row: ", lowestRow(row, col));
+    if (lowestRow(row, col)) {
+      row = lowestRow(row, col);
+      arcade.board[row][col] = color;
+      if (
+        checkHorizontal(row) ||
+        checkVertical(col) ||
+        checkDiagonal(row, col)
+      ) {
+        event.target.dataset.column = col;
+        event.target.dataset.row = row;
+        arcade.board[row][col] = "";
+        addToken(event);
+        return;
+      }
       arcade.board[row][col] = "";
-
-      addToken(event);
-      return;
+    } else {
+      continue;
     }
-    arcade.board[row][col] = "";
   }
   col = Math.floor(Math.random() * arcade.board[0].length);
-  console.log("computer column, ", col);
-  event.target.dataset.column = col;
-  event.target.dataset.row = lowestRow(row, col);
-  addToken(event);
-  return;
+  if (arcade.board[0][col] === "") {
+    event.target.dataset.column = col;
+    addToken(event);
+    return;
+  } else {
+    for (col in arcade.board[0]) {
+      if (arcade.board[0][col] === "") {
+        event.target.dataset.column = col;
+        addToken(event);
+        return;
+      }
+    }
+  }
 }
 
 ///////////////////////////////////////
@@ -441,15 +458,7 @@ function ticPlay(e) {
       message.textContent = `${name} wins!!`;
       message.classList.remove("hide");
       play = false;
-      if (arcade.player1.turn) {
-        arcade.player1.score += 5;
-        p1Score.textContent = `Score: ${arcade.player1.score}`;
-        scoreDiv[0].classList.remove(`${arcade.player1.color}`);
-      } else {
-        arcade.player2.score += 5;
-        p2Score.textContent = `Score: ${arcade.player2.score}`;
-        scoreDiv[1].classList.remove(`${arcade.player2.color}`);
-      }
+      updateScore(5);
       return;
     }
     if (arcade.player1.turn) {
@@ -559,6 +568,7 @@ let snakeState = {};
 
 // the board is traditionally 3 columns, by 3 rows
 function newSnakeBoard() {
+  clearInterval(interval);
   gameDiv.textContent = "";
   arcade.board = [];
   snakeBoard.textContent = "";
@@ -595,7 +605,8 @@ function newSnakeBoard() {
 
   snakeState = {
     apple: [11, 8],
-    snake: snake, // from above
+    snake: snake,
+    time: 5,
   };
 
   // randomly choose a player to start
@@ -610,9 +621,9 @@ function newSnakeBoard() {
       arcade.player1.turn = true;
     }
   }
+
   message.textContent = "Press S to start.";
   message.classList.remove("hide");
-  console.log("new snakeboard beging called");
   renderSnakeState();
 }
 const snakeButton = document.querySelector("#snake-button");
@@ -621,52 +632,76 @@ snakeButton.addEventListener("click", newSnakeBoard);
 ///////////////////////////////
 
 function tick() {
-  console.log(snake.body);
-
-  play = true;
-  // this is an incremental change that happens to the state every time you update...
-  let nextSnake = [];
-  let prevPart = snake.body[0];
-  let count = 0;
-  for (bodyPart of snake.body) {
-    const square = document.querySelectorAll(`[data-column="${bodyPart[0]}"]`)[
-      bodyPart[1]
-    ];
-    if (count === 0) {
-      nextSnake.push([
-        bodyPart[0] + snake.nextDirection[0],
-        bodyPart[1] + snake.nextDirection[1],
-      ]);
-      // check to see if next move eats an apple
-      if (
-        nextSnake[0][0] === snakeState.apple[0] &&
-        nextSnake[0][1] === snakeState.apple[1]
-      ) {
-        console.log("eating an apple!");
-        eatApple();
-        snake.body.unshift([nextSnake[0][0], nextSnake[0][1]]);
-        return;
+  if (play) {
+    let nextSnake = [];
+    let prevPart = snake.body[0];
+    let count = 0;
+    for (bodyPart of snake.body) {
+      const square = document.querySelectorAll(
+        `[data-column="${bodyPart[0]}"]`
+      )[bodyPart[1]];
+      if (count === 0) {
+        nextSnake.push([
+          bodyPart[0] + snake.nextDirection[0],
+          bodyPart[1] + snake.nextDirection[1],
+        ]);
+        // check to see if next move eats an apple
+        if (
+          nextSnake[0][0] === snakeState.apple[0] &&
+          nextSnake[0][1] === snakeState.apple[1]
+        ) {
+          console.log("eating an apple!");
+          eatApple();
+          snake.body.unshift([nextSnake[0][0], nextSnake[0][1]]);
+          return;
+        }
+        // check to see if next move hits a wall or self
+        if (
+          hitWall([nextSnake[0][0], nextSnake[0][1]]) ||
+          hitSelf([nextSnake[0][0], nextSnake[0][1]])
+        ) {
+          if (arcade.player1.turn && arcade.player2.name != "Computer") {
+            return;
+          } else if (arcade.player1.turn) {
+            scoreDiv[0].classList.remove(`${arcade.player1.color}`);
+            scoreDiv[1].classList.add(`${arcade.player2.color}`);
+            arcade.player1.turn = !arcade.player1.turn;
+          } else {
+            scoreDiv[0].classList.add(`${arcade.player1.color}`);
+            scoreDiv[1].classList.remove(`${arcade.player2.color}`);
+            arcade.player1.turn = !arcade.player1.turn;
+          }
+        }
+      } else {
+        nextSnake.push(prevPart);
+        prevPart = bodyPart;
       }
-      // check to see if next move hits a wall
-      if (hitWall()) {
-        return;
-      }
-      // check to see if next move hits self
-      if (hitSelf()) {
-        return;
-      }
-    } else {
-      nextSnake.push(prevPart);
-      prevPart = bodyPart;
+      count += 1;
+      square.classList.remove("snake-body");
     }
-    count += 1;
-    square.classList.remove("snake-body");
+    snake.body = nextSnake;
+    renderSnakeState();
   }
-  snake.body = nextSnake;
-  renderSnakeState();
 }
-/*
-if (play === true) setInterval(tick, 1000 / 30); // as close to 30 frames per second as possible */
+let interval;
+// add event listeners for keyboard hits and define what specific buttons do
+document.addEventListener("keydown", (e) => {
+  e.code === "ArrowLeft"
+    ? (snake.nextDirection = [-1, 0])
+    : e.code === "ArrowUp"
+    ? (snake.nextDirection = [0, -1])
+    : e.code === "ArrowRight"
+    ? (snake.nextDirection = [1, 0])
+    : e.code === "ArrowDown"
+    ? (snake.nextDirection = [0, 1])
+    : console.log("choose another");
+
+  if (e.code === "KeyS") {
+    newSnakeBoard();
+    play = true;
+    interval = setInterval(tick, 1000 / snakeState.time); // as close to 30 frames per second as possible
+  }
+});
 
 function renderSnakeState() {
   const apple = document.querySelectorAll(
@@ -687,6 +722,10 @@ function eatApple() {
   )[snakeState.apple[1]];
   appleToSnake.classList.remove("apple");
   appleToSnake.classList.add("snake-body");
+  // increase time difficulty by 4
+  snakeState.time += 4;
+  // increase playerScore
+  updateScore(1);
   // find a random location for a new apple
   newApple();
 }
@@ -709,17 +748,26 @@ function newApple() {
   newApple.classList.add("apple");
 }
 
-// add event listeners for keyboard hits and define what specific buttons do
-document.addEventListener("keydown", (e) => {
-  e.code === "ArrowLeft"
-    ? (snake.nextDirection = [-1, 0])
-    : e.code === "ArrowUp"
-    ? (snake.nextDirection = [0, -1])
-    : e.code === "ArrowRight"
-    ? (snake.nextDirection = [1, 0])
-    : e.code === "ArrowDown"
-    ? (snake.nextDirection = [0, 1])
-    : e.code === "KeyS"
-    ? tick() // play=true;
-    : console.log("choose another");
-});
+// if a wall is hit display a message, set play to false, and return false
+function hitWall(arr) {
+  if (arr[0] < 0 || arr[0] > 19 || arr[1] < 0 || arr[1] > 19) {
+    message.textContent = "Hit Wall! Game Over";
+    message.classList.remove("hide");
+    play = false;
+    return true;
+  }
+}
+
+// if self is hit display a message, set play to false, and return false
+function hitSelf(head) {
+  if (
+    snake.body.some((part) => {
+      if (part[0] === head[0] && part[1] === head[1]) return true;
+    })
+  ) {
+    message.textContent = "Hit Self! Game Over";
+    message.classList.remove("hide");
+    play = false;
+    return true;
+  }
+}
