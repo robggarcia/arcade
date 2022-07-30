@@ -231,7 +231,7 @@ function checkHorizontal(row) {
 // check Vertical for win
 function checkVertical(col) {
   let checkArray = [];
-  for (row in arcade.board) {
+  for (let row in arcade.board) {
     checkArray.push(arcade.board[row][col]);
   }
   return checkWin(checkArray);
@@ -291,7 +291,7 @@ function lowestRow(row, col) {
 // this function checks the current status of the board
 // if all spots on the board are full, gameplay is set to false and message is displayed
 function checkDraw() {
-  for (col of arcade.board[0]) {
+  for (let col of arcade.board[0]) {
     if (col === "") {
       console.log("there is still an empty space");
       return false;
@@ -365,7 +365,7 @@ function compTurn(color) {
     addToken(event);
     return;
   } else {
-    for (col in arcade.board[0]) {
+    for (let col in arcade.board[0]) {
       if (arcade.board[0][col] === "") {
         event.target.dataset.column = col;
         addToken(event);
@@ -557,8 +557,8 @@ function compTic(symbol) {
     },
   };
   // first iterate through all available moves and see if there is a winning location
-  for (rowIdx in arcade.board) {
-    for (colIdx in arcade.board[rowIdx]) {
+  for (let rowIdx in arcade.board) {
+    for (let colIdx in arcade.board[rowIdx]) {
       if (arcade.board[rowIdx][colIdx] === "") {
         // console.log("an empty field was found");
         arcade.board[rowIdx][colIdx] = symbol;
@@ -678,7 +678,7 @@ function tick() {
     let nextSnake = [];
     let prevPart = snake.body[0];
     let count = 0;
-    for (bodyPart of snake.body) {
+    for (let bodyPart of snake.body) {
       const square = document.querySelectorAll(
         `[data-column="${bodyPart[0]}"]`
       )[bodyPart[1]];
@@ -743,7 +743,7 @@ function renderSnakeState() {
     `[data-column="${snakeState.apple[0]}"]`
   )[snakeState.apple[1]];
   apple.classList.add("apple");
-  for (bodyPart of snake.body) {
+  for (let bodyPart of snake.body) {
     const square = document.querySelectorAll(`[data-column="${bodyPart[0]}"]`)[
       bodyPart[1]
     ];
@@ -822,11 +822,14 @@ jetTitle.textContent = "Jet Fighter";
 
 const jetRules = document.createElement("p");
 jetRules.textContent =
-  "Use the up/down arrows to fly and spacebar to shoot. Happy Hunting!";
+  "Use the up/down arrows to fly and F to shoot. Happy Hunting!";
 
 let jet = {};
 let jetState = {};
 let round = [];
+let flyCount = 0;
+let enemy = {};
+let enemyCount = 0;
 
 // the board is traditionally 3 columns, by 3 rows
 function newJetBoard() {
@@ -867,16 +870,24 @@ function newJetBoard() {
     nextDirection: 0, // -1 for UP and +1 for DOWN
   };
 
+  enemy = [
+    {
+      body: [
+        [10, 45],
+        [11, 45],
+        [10, 44],
+        [11, 44],
+      ],
+      key: 0,
+    },
+  ];
+
   jetState = {
-    enemy: [
-      [10, 44],
-      [11, 44],
-      [10, 43],
-      [11, 43],
-    ],
-    jet: jet,
     time: 20,
   };
+
+  flyCount = 0;
+  enemyCount = 0;
   // choose the next player to start
   if (arcade.player2.name === "Computer" && arcade.player1.turn === false) {
     arcade.player1.turn = true;
@@ -901,9 +912,10 @@ jetButton.addEventListener("click", () => {
   newJetBoard();
 });
 
-///////////////////////////////
+// the fly function continuously iterates and updates the playing board
 function fly() {
   if (play) {
+    flyCount += 1;
     message.classList.add("hide");
     let nextJet = [];
     for (let part of jet.body) {
@@ -914,29 +926,88 @@ function fly() {
       jetDiv.classList.remove("jet");
     }
     if (!checkHit(nextJet)) jet.body = nextJet;
+
+    // scroll enemy to the left and remove if it reaches the end of screen
+    for (let idx in enemy) {
+      let nextEnemy = [];
+      for (let part of enemy[idx].body) {
+        const enemyDiv = document.querySelectorAll(`[data-row="${part[0]}"]`)[
+          part[1]
+        ];
+        enemyDiv.classList.remove("enemy");
+        // if the enemy hits the jet, game over
+        if (part[1] < 2) {
+          for (let arr of jet.body) {
+            if (part[0] === arr[0]) {
+              console.log("GAME OVER");
+              message.textContent = "Collision! Game Over";
+              message.classList.remove("hide");
+              arcade.player1.turn = !arcade.player1.turn;
+              play = false;
+              setTimeout(newJetBoard, 1000);
+            }
+          }
+        }
+        // remove the enemy if it reaches the end of the screen
+        if (part[1] - 1 < 0) {
+          enemy.slice(idx + 1);
+          continue;
+        } else {
+          if (flyCount % 2 === 0) {
+            nextEnemy.push([part[0], part[1] - 1]);
+          } else {
+            nextEnemy.push([part[0], part[1]]);
+          }
+        }
+      }
+      enemy[idx].body = nextEnemy;
+    }
+    // scroll shot to the right
     let nextRound = [];
     if (round !== []) {
       for (let idx in round) {
         const shotDiv = document.querySelectorAll(
           `[data-row="${round[idx][0]}"]`
         )[round[idx][1]];
+        shotDiv.classList.remove("shot");
         if (round[idx][1] + 1 > 45) {
           console.log("off the screen");
           let part = round.slice(idx + 1);
-          round = round.slice(0, idx);
-          for (arr of part) {
-            round.push([arr[0], arr[1]]);
+          nextRound = round.slice(0, idx);
+          for (let arr of part) {
+            nextRound.push([arr[0], arr[1]]);
           }
         } else {
           nextRound.push([round[idx][0], round[idx][1] + jet.shot.next]);
         }
-        shotDiv.classList.remove("shot");
       }
     }
-
     round = nextRound;
+
+    // if the flyCount is greater than 20 create a new enemy and reset the counter
+    if (flyCount > 20) {
+      createEnemy();
+      flyCount = 0;
+    }
+    checkShot();
     renderJetState();
   }
+}
+
+// this function creates a new enemy at a random location
+function createEnemy() {
+  enemyCount += 1;
+  let start = Math.floor(Math.random() * 19);
+  let newEnemy = {
+    body: [
+      [start, 44],
+      [start, 45],
+      [start + 1, 44],
+      [start + 1, 45],
+    ],
+    key: enemyCount,
+  };
+  enemy[enemy.length] = newEnemy;
 }
 
 let jetInterval;
@@ -976,7 +1047,6 @@ function fire() {
 // function accepts updated positions and checks to see if an obstruction has occured
 function checkHit(nextPart) {
   for (let arr of nextPart) {
-    console.log(arr[0][1]);
     if (arr[0] < 0 || arr[0] > 19 || arr[0][1] > 45) {
       return true;
     }
@@ -984,12 +1054,40 @@ function checkHit(nextPart) {
   return false;
 }
 
+// check the current state of the board and update the enemy and round arrays if there are any hits
+function checkShot() {
+  for (let idx in enemy) {
+    for (let arr of enemy[idx].body) {
+      for (let shot of round) {
+        if (arr[0] === shot[0] && arr[1] === shot[1]) {
+          console.log("A HIT!");
+          // update the enemy
+          let truncate = enemy.slice(Number(idx) + 1);
+          console.log("truncate: ", truncate);
+          enemy = enemy.slice(0, idx);
+          for (let obj in truncate) {
+            enemy.push(truncate[obj]);
+          }
+          updateScore(1);
+          return;
+        }
+      }
+    }
+  }
+}
+
 function renderJetState() {
-  for (let part of jetState.enemy) {
-    const enemy = document.querySelectorAll(`[data-row="${part[0]}"]`)[part[1]];
-    enemy.classList.add("enemy");
+  // update current state of enemy
+  for (let idx in enemy) {
+    for (let part of enemy[idx].body) {
+      const enemy = document.querySelectorAll(`[data-row="${part[0]}"]`)[
+        part[1]
+      ];
+      enemy.classList.add("enemy");
+    }
   }
 
+  // update current state of jet
   for (let bodyPart of jet.body) {
     const jet = document.querySelectorAll(`[data-row="${bodyPart[0]}"]`)[
       bodyPart[1]
@@ -997,6 +1095,7 @@ function renderJetState() {
     jet.classList.add("jet");
   }
 
+  // update current state of round
   for (let arr of round) {
     const shot = document.querySelectorAll(`[data-row="${arr[0]}"]`)[arr[1]];
     shot.classList.add("shot");
