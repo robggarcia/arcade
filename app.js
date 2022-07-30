@@ -456,7 +456,6 @@ function ticPlay(e) {
     // check to see if click location is open
     if (checkTic(row, column)) {
       const mark = document.querySelectorAll(`[data-column="${column}"]`)[row];
-      console.log(mark);
       arcade.board[row][column] = symbol;
       mark.textContent = symbol;
 
@@ -561,7 +560,7 @@ function compTic(symbol) {
   for (rowIdx in arcade.board) {
     for (colIdx in arcade.board[rowIdx]) {
       if (arcade.board[rowIdx][colIdx] === "") {
-        console.log("an empty field was found");
+        // console.log("an empty field was found");
         arcade.board[rowIdx][colIdx] = symbol;
         if (checkTicWin(rowIdx, colIdx)) {
           arcade.board[rowIdx][colIdx] = "";
@@ -645,13 +644,11 @@ function newSnakeBoard() {
     snake: snake,
     time: 5,
   };
-  console.log(arcade.player1.turn);
   // choose the next player to start
   if (arcade.player2.name === "Computer" && arcade.player1.turn === false) {
     arcade.player1.turn = true;
     scoreDiv[0].classList.add(`${arcade.player1.color}`);
     scoreDiv[1].classList.remove(`${arcade.player2.color}`);
-    console.log("p2 - Computer && turn - false");
   } else if (arcade.player1.turn === false) {
     scoreDiv[0].classList.remove(`${arcade.player1.color}`);
     scoreDiv[1].classList.add(`${arcade.player2.color}`);
@@ -664,8 +661,10 @@ function newSnakeBoard() {
   message.classList.remove("hide");
   renderSnakeState();
 }
+let gameplay; // define variable so that keydowns will only affect current game
 const snakeButton = document.querySelector("#snake-button");
 snakeButton.addEventListener("click", () => {
+  gameplay = "snake";
   arcade.player1.turn = "true";
   newSnakeBoard();
 });
@@ -720,20 +719,22 @@ function tick() {
 let interval;
 // add event listeners for keyboard hits and define what specific buttons do
 document.addEventListener("keydown", (e) => {
-  e.code === "ArrowLeft"
-    ? (snake.nextDirection = [-1, 0])
-    : e.code === "ArrowUp"
-    ? (snake.nextDirection = [0, -1])
-    : e.code === "ArrowRight"
-    ? (snake.nextDirection = [1, 0])
-    : e.code === "ArrowDown"
-    ? (snake.nextDirection = [0, 1])
-    : console.log("choose another");
+  if (gameplay === "snake") {
+    e.code === "ArrowLeft"
+      ? (snake.nextDirection = [-1, 0])
+      : e.code === "ArrowUp"
+      ? (snake.nextDirection = [0, -1])
+      : e.code === "ArrowRight"
+      ? (snake.nextDirection = [1, 0])
+      : e.code === "ArrowDown"
+      ? (snake.nextDirection = [0, 1])
+      : console.log("choose another");
 
-  if (e.code === "KeyS") {
-    newSnakeBoard();
-    play = true;
-    interval = setInterval(tick, 1000 / snakeState.time); // as close to 30 frames per second as possible
+    if (e.code === "KeyS") {
+      newSnakeBoard();
+      play = true;
+      interval = setInterval(tick, 1000 / snakeState.time); // as close to 30 frames per second as possible
+    }
   }
 });
 
@@ -805,5 +806,199 @@ function hitSelf(head) {
     play = false;
     arcade.player1.turn = !arcade.player1.turn;
     return true;
+  }
+}
+
+///////////////////////////////////////////////
+////////////// JET FIGHTER /////////////////
+/////////////////////////////////////////
+
+// set up game div, then display name of game and objective
+const jetBoard = document.createElement("div");
+jetBoard.setAttribute("id", "jet-board");
+
+const jetTitle = document.createElement("h2");
+jetTitle.textContent = "Jet Fighter";
+
+const jetRules = document.createElement("p");
+jetRules.textContent =
+  "Use the up/down arrows to fly and spacebar to shoot. Happy Hunting!";
+
+let jet = {};
+let jetState = {};
+let round = [];
+
+// the board is traditionally 3 columns, by 3 rows
+function newJetBoard() {
+  clearInterval(interval);
+  gameDiv.textContent = "";
+  arcade.board = [];
+  jetBoard.textContent = "";
+  round = [];
+  let count = 0;
+  for (let i = 0; i < 20; i++) {
+    arcade.board[i] = [];
+    for (let j = 0; j < 46; j++) {
+      arcade.board[i].push("");
+      let jetDiv = document.createElement("div");
+      jetDiv.setAttribute("class", "jet-square");
+      jetBoard.appendChild(jetDiv);
+      jetDiv.dataset.column = j;
+      jetDiv.dataset.row = i;
+      count += 1;
+    }
+  }
+  gameDiv.appendChild(jetTitle);
+  gameDiv.appendChild(jetRules);
+  gameDiv.appendChild(jetBoard);
+
+  // define the jet object with the starting condition
+  jet = {
+    body: [
+      [9, 0],
+      [10, 0],
+      [10, 1],
+      [11, 0],
+    ],
+    shot: {
+      key: 0,
+      next: 1,
+    },
+    nextDirection: 0, // -1 for UP and +1 for DOWN
+  };
+
+  jetState = {
+    enemy: [
+      [10, 44],
+      [11, 44],
+      [10, 43],
+      [11, 43],
+    ],
+    jet: jet,
+    time: 20,
+  };
+  // choose the next player to start
+  if (arcade.player2.name === "Computer" && arcade.player1.turn === false) {
+    arcade.player1.turn = true;
+    scoreDiv[0].classList.add(`${arcade.player1.color}`);
+    scoreDiv[1].classList.remove(`${arcade.player2.color}`);
+  } else if (arcade.player1.turn === false) {
+    scoreDiv[0].classList.remove(`${arcade.player1.color}`);
+    scoreDiv[1].classList.add(`${arcade.player2.color}`);
+  } else {
+    scoreDiv[0].classList.add(`${arcade.player1.color}`);
+    scoreDiv[1].classList.remove(`${arcade.player2.color}`);
+  }
+
+  message.textContent = "Press S to start.";
+  message.classList.remove("hide");
+  renderJetState();
+}
+const jetButton = document.querySelector("#jet-button");
+jetButton.addEventListener("click", () => {
+  gameplay = "jet";
+  arcade.player1.turn = "true";
+  newJetBoard();
+});
+
+///////////////////////////////
+function fly() {
+  if (play) {
+    message.classList.add("hide");
+    let nextJet = [];
+    for (let part of jet.body) {
+      const jetDiv = document.querySelectorAll(`[data-row="${part[0]}"]`)[
+        part[1]
+      ];
+      nextJet.push([part[0] + jet.nextDirection, part[1]]);
+      jetDiv.classList.remove("jet");
+    }
+    if (!checkHit(nextJet)) jet.body = nextJet;
+    let nextRound = [];
+    if (round !== []) {
+      for (let idx in round) {
+        const shotDiv = document.querySelectorAll(
+          `[data-row="${round[idx][0]}"]`
+        )[round[idx][1]];
+        if (round[idx][1] + 1 > 45) {
+          console.log("off the screen");
+          let part = round.slice(idx + 1);
+          round = round.slice(0, idx);
+          for (arr of part) {
+            round.push([arr[0], arr[1]]);
+          }
+        } else {
+          nextRound.push([round[idx][0], round[idx][1] + jet.shot.next]);
+        }
+        shotDiv.classList.remove("shot");
+      }
+    }
+
+    round = nextRound;
+    renderJetState();
+  }
+}
+
+let jetInterval;
+// add event listeners for keyboard hits and define what specific buttons do
+document.addEventListener("keydown", (e) => {
+  console.log(e.code);
+  if (gameplay === "jet") {
+    e.code === "ArrowUp"
+      ? (jet.nextDirection = -1)
+      : e.code === "ArrowDown"
+      ? (jet.nextDirection = 1)
+      : console.log("choose another");
+
+    if (e.code === "KeyS") {
+      if (newJetBoard()) return;
+      play = true;
+      interval = setInterval(fly, 1000 / jetState.time); // as close to 30 frames per second as possible
+    }
+
+    if (e.code === "KeyF") {
+      console.log("fire!");
+      round[jet.shot.key] = fire();
+      jet.shot.key += 1;
+    }
+  }
+});
+document.addEventListener("keyup", (e) => {
+  if (gameplay === "jet") {
+    jet.nextDirection = 0;
+  }
+});
+
+function fire() {
+  return [jet.body[2][0], jet.body[2][1] + 1];
+}
+
+// function accepts updated positions and checks to see if an obstruction has occured
+function checkHit(nextPart) {
+  for (let arr of nextPart) {
+    console.log(arr[0][1]);
+    if (arr[0] < 0 || arr[0] > 19 || arr[0][1] > 45) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function renderJetState() {
+  for (let part of jetState.enemy) {
+    const enemy = document.querySelectorAll(`[data-row="${part[0]}"]`)[part[1]];
+    enemy.classList.add("enemy");
+  }
+
+  for (let bodyPart of jet.body) {
+    const jet = document.querySelectorAll(`[data-row="${bodyPart[0]}"]`)[
+      bodyPart[1]
+    ];
+    jet.classList.add("jet");
+  }
+
+  for (let arr of round) {
+    const shot = document.querySelectorAll(`[data-row="${arr[0]}"]`)[arr[1]];
+    shot.classList.add("shot");
   }
 }

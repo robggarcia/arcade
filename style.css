@@ -212,3 +212,33 @@ header {
     background-color: #E4572E;
     border-radius: 50%;
 }
+
+/* JET FIGHTER */
+#jet-board {
+    margin-top: 10px;
+    padding: 1px;
+    width: 700px;
+    /* height: 431px; */
+    display: flex;
+    flex-wrap: wrap;
+    border: 4px solid #000009;
+}
+
+.jet-square {
+    height: 14px;
+    width: 14px;
+    background-color: #46B1C9;
+    margin: 0.5px;
+}
+
+.jet {
+    background-color: #463d40;
+}
+
+.enemy {
+    background-color: #6D435A;
+}
+
+.shot {
+    background-color: #D81159;
+}
