@@ -50,9 +50,13 @@ header {
     margin: auto
 }
 
+#buttons {
+    width: 350px;
+}
+
 #begin {
     width: 350px;
-    margin: 20px 50px;
+    margin: 20px 20px 20px auto;
     display: flex;
     flex-direction: column;
 }
@@ -111,6 +115,19 @@ header {
     margin: 10px auto;
 }
 
+@media only screen and (max-width: 1200px) {
+    #user-interface {
+        margin-right: auto flex;
+        flex-direction: column;
+    }
+
+    #begin {
+        margin-right: auto;
+    }
+}
+
+/* CONNECT FOUR */
+
 #connect-board {
     margin: 20px;
     padding: 10px;
@@ -145,7 +162,7 @@ header {
 }
 
 #game {
-    margin: 20px auto 10px auto;
+    margin: 20px auto 30px auto;
     display: flex;
     flex-direction: column;
     align-items: center;
@@ -218,7 +235,6 @@ header {
     margin-top: 10px;
     padding: 1px;
     width: 700px;
-    /* height: 431px; */
     display: flex;
     flex-wrap: wrap;
     border: 4px solid #000009;

@@ -17,6 +17,7 @@ const arcade = {
   message: "",
 };
 
+// update the user interface based on user input
 const body = document.querySelector("body");
 
 const scoreDiv = document.querySelectorAll(".score");
@@ -99,6 +100,7 @@ let play = false;
 
 // the board is traditionally 7 columns, by 6 rows
 const gameDiv = document.querySelector("#game");
+// initialize the connect four game board and start game
 function newC4Board() {
   gameDiv.textContent = "";
   arcade.board = [];
@@ -163,6 +165,8 @@ function addToken(e) {
     const token = document.querySelectorAll(`[data-column="${column}"]`)[row];
     arcade.board[row][column] = color;
     token.classList.add(`${color}`);
+
+    // check to see if the placed token wins the game
     if (
       checkHorizontal(row) ||
       checkVertical(column) ||
@@ -174,12 +178,15 @@ function addToken(e) {
       updateScore(25);
       return;
     }
+
+    // choose the next players turn and alert the user
     if (arcade.player1.turn) {
       scoreDiv[0].classList.remove(`${arcade.player1.color}`);
       scoreDiv[1].classList.add(`${arcade.player2.color}`);
       arcade.player1.turn = !arcade.player1.turn;
       if (arcade.player2.name === "Computer") {
-        c4Board.removeEventListener("click", addToken); // disable click event
+        // disable click event during computers turn
+        c4Board.removeEventListener("click", addToken);
         setTimeout(compTurn, 1000, arcade.player2.color);
       }
     } else {
@@ -187,41 +194,15 @@ function addToken(e) {
       scoreDiv[1].classList.remove(`${arcade.player2.color}`);
       arcade.player1.turn = !arcade.player1.turn;
       if (arcade.player1.name === "Computer") {
-        c4Board.removeEventListener("click", addToken); // disable click event
+        // disable click event during computers turn
+        c4Board.removeEventListener("click", addToken);
         setTimeout(compTurn, 1000, arcade.player1.color);
-        // disable click event
       }
     }
     checkDraw();
   }
 }
 c4Board.addEventListener("click", addToken);
-
-// define a function to check for 4 same tokens in a row, given a single array to check
-function checkWin(arr) {
-  let count = 1;
-  let color = "";
-  let prevColor = "";
-  for (let i = 0; i < arr.length; i++) {
-    if (arr[i]) {
-      color = arr[i];
-      if (prevColor === color) {
-        count += 1;
-      } else {
-        count = 1;
-      }
-      prevColor = color;
-      if (count === 4) {
-        console.log(`${color} wins!`);
-        return true;
-      }
-    } else {
-      count = 1;
-      prevColor = "";
-    }
-  }
-  return false;
-}
 
 // check Horizontal for win
 function checkHorizontal(row) {
@@ -274,6 +255,32 @@ function checkDiagonal(row, col) {
   return false;
 }
 
+// check for 4 same tokens in a row, given a single array to check
+function checkWin(arr) {
+  let count = 1;
+  let color = "";
+  let prevColor = "";
+  for (let i = 0; i < arr.length; i++) {
+    if (arr[i]) {
+      color = arr[i];
+      if (prevColor === color) {
+        count += 1;
+      } else {
+        count = 1;
+      }
+      prevColor = color;
+      if (count === 4) {
+        console.log(`${color} wins!`);
+        return true;
+      }
+    } else {
+      count = 1;
+      prevColor = "";
+    }
+  }
+  return false;
+}
+
 // this function selects the lowest available row for a given column
 // if a row is not available, a message is sent explaining to choose another column
 function lowestRow(row, col) {
@@ -288,7 +295,7 @@ function lowestRow(row, col) {
   return false;
 }
 
-// this function checks the current status of the board
+// check the current status of the board
 // if all spots on the board are full, gameplay is set to false and message is displayed
 function checkDraw() {
   for (let col of arcade.board[0]) {
@@ -297,26 +304,12 @@ function checkDraw() {
       return false;
     }
   }
-
   message.textContent = "No More Moves Available :(";
   message.classList.remove("hide");
   scoreDiv[0].classList.remove(`${arcade.player1.color}`);
   scoreDiv[1].classList.remove(`${arcade.player2.color}`);
   play = false;
   return true;
-}
-
-// this function accepts a point value and adds it to the current users score and updates the HTML
-function updateScore(score) {
-  if (arcade.player1.turn) {
-    arcade.player1.score += score;
-    p1Score.textContent = `Score: ${arcade.player1.score}`;
-    scoreDiv[0].classList.remove(`${arcade.player1.color}`);
-  } else {
-    arcade.player2.score += score;
-    p2Score.textContent = `Score: ${arcade.player2.score}`;
-    scoreDiv[1].classList.remove(`${arcade.player2.color}`);
-  }
 }
 
 // if either player is the computer create a function play their turn
@@ -372,6 +365,19 @@ function compTurn(color) {
         return;
       }
     }
+  }
+}
+
+// accept a point value and adds it to the current users score and updates the HTML
+function updateScore(score) {
+  if (arcade.player1.turn) {
+    arcade.player1.score += score;
+    p1Score.textContent = `Score: ${arcade.player1.score}`;
+    scoreDiv[0].classList.remove(`${arcade.player1.color}`);
+  } else {
+    arcade.player2.score += score;
+    p2Score.textContent = `Score: ${arcade.player2.score}`;
+    scoreDiv[1].classList.remove(`${arcade.player2.color}`);
   }
 }
 
@@ -508,7 +514,6 @@ function checkDrawTic() {
       }
     }
   }
-
   message.textContent = "No More Moves Available :(";
   message.classList.remove("hide");
   scoreDiv[0].classList.remove(`${arcade.player1.color}`);
@@ -560,7 +565,6 @@ function compTic(symbol) {
   for (let rowIdx in arcade.board) {
     for (let colIdx in arcade.board[rowIdx]) {
       if (arcade.board[rowIdx][colIdx] === "") {
-        // console.log("an empty field was found");
         arcade.board[rowIdx][colIdx] = symbol;
         if (checkTicWin(rowIdx, colIdx)) {
           arcade.board[rowIdx][colIdx] = "";
@@ -641,7 +645,6 @@ function newSnakeBoard() {
 
   snakeState = {
     apple: [11, 8],
-    snake: snake,
     time: 5,
   };
   // choose the next player to start
@@ -669,8 +672,7 @@ snakeButton.addEventListener("click", () => {
   newSnakeBoard();
 });
 
-///////////////////////////////
-
+// this function continuously iterates and updates all game objects and checks for updates
 function tick() {
   if (play) {
     message.classList.add("hide");
@@ -716,7 +718,11 @@ function tick() {
     renderSnakeState();
   }
 }
+
+// this variable will contain the interval that is continuously updated
+// it must be reset at the beginning of every game
 let interval;
+
 // add event listeners for keyboard hits and define what specific buttons do
 document.addEventListener("keydown", (e) => {
   if (gameplay === "snake") {
@@ -1013,7 +1019,6 @@ function createEnemy() {
 let jetInterval;
 // add event listeners for keyboard hits and define what specific buttons do
 document.addEventListener("keydown", (e) => {
-  console.log(e.code);
   if (gameplay === "jet") {
     e.code === "ArrowUp"
       ? (jet.nextDirection = -1)
@@ -1028,7 +1033,6 @@ document.addEventListener("keydown", (e) => {
     }
 
     if (e.code === "KeyF") {
-      console.log("fire!");
       round[jet.shot.key] = fire();
       jet.shot.key += 1;
     }
@@ -1063,7 +1067,7 @@ function checkShot() {
           console.log("A HIT!");
           // update the enemy
           let truncate = enemy.slice(Number(idx) + 1);
-          console.log("truncate: ", truncate);
+          "truncate: ", truncate;
           enemy = enemy.slice(0, idx);
           for (let obj in truncate) {
             enemy.push(truncate[obj]);
